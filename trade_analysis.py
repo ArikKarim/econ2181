@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+# Set non-interactive backend at the start
+import matplotlib
+matplotlib.use('Agg')
+
 def import_and_explore_data(filename):
     """Import Excel file and explore its structure"""
     print("Importing Excel file and exploring structure...")
@@ -51,8 +55,9 @@ def transform_data(df):
     
     print("Found USA and China data")
     
-    # Get year columns (from 1990 to 2024)
-    year_columns = [col for col in df_clean.columns if isinstance(col, str) and col.startswith('19') or col.startswith('20')]
+    # Get year columns (from 1990 to 2024) - FIX: operator precedence issue
+    year_columns = [col for col in df_clean.columns 
+                   if isinstance(col, str) and (col.startswith('19') or col.startswith('20'))]
     # Clean year column names to extract year numbers
     year_numbers = []
     cleaned_year_cols = []
@@ -107,11 +112,7 @@ def create_plot(df_long):
     """Create matplotlib line chart"""
     print("\nCreating visualization...")
     
-    # Set non-interactive backend to avoid GUI issues
-    import matplotlib
-    matplotlib.use('Agg')
-    
-    # Set up the plot
+    # Set up the plot (backend already set globally)
     plt.figure(figsize=(12, 8))
     
     # Plot lines for each country
@@ -148,12 +149,127 @@ def save_to_csv(df_long):
     df_long.to_csv('trade_data_usa_china_long.csv', index=False)
     print("Data saved as 'trade_data_usa_china_long.csv'")
 
+def lab_median_growth_gap(trade_xlsx_path, growth_xlsx_path):
+    """
+    Complete Data Lab 2 analysis matching the slides:
+    - Load Trade and GDP per capita growth data
+    - Melt both to long format
+    - Merge on country/year
+    - Compute above/below median trade grouping by year
+    - Calculate average growth by group and pivot
+    - Plot difference series with mean and zero lines
+    """
+    print("\n" + "="*60)
+    print("DATA LAB 2 ANALYSIS: MEDIAN GROWTH GAP")
+    print("="*60)
+    
+    # Load WDI Excel extracts (Data sheets)
+    print("Loading Trade data...")
+    trade = pd.read_excel(trade_xlsx_path, sheet_name="Data")
+    print("Loading Growth data...")
+    growth = pd.read_excel(growth_xlsx_path, sheet_name="Data")
+
+    def tidy(df, value_name):
+        """Convert WDI data to long format"""
+        id_cols = ['Country Name','Country Code','Series Name','Series Code']
+        year_cols = [c for c in df.columns 
+                     if isinstance(c, str) and (c.startswith('19') or c.startswith('20')) and '[YR' in c]
+        
+        if df.empty:
+            return pd.DataFrame()
+            
+        df = df[id_cols + year_cols].copy()
+        
+        # Filter correct indicator
+        if value_name == 'Trade':
+            df = df[df['Series Code'] == 'NE.TRD.GNFS.ZS']
+        else:  # Growth
+            df = df[df['Series Code'] == 'NY.GDP.PCAP.KD.ZG']
+            
+        if df.empty:
+            return pd.DataFrame()
+            
+        # Melt to long
+        long = df.melt(id_vars=['Country Name','Country Code','Series Name','Series Code'],
+                       value_vars=year_cols, var_name='Year', value_name=value_name)
+        
+        # Clean Year
+        long['Year'] = long['Year'].str.extract(r'(\d{4})').astype(int)
+        return long[['Country Name','Country Code','Year', value_name]]
+
+    # Convert both datasets to long format
+    trade_long = tidy(trade, 'Trade')
+    growth_long = tidy(growth, 'Growth')
+    
+    print(f"Trade data: {len(trade_long)} observations")
+    print(f"Growth data: {len(growth_long)} observations")
+
+    # Merge on country and year
+    frame = pd.merge(trade_long, growth_long, on=['Country Name','Country Code','Year'])
+    frame = frame.dropna(subset=['Trade','Growth'])
+    print(f"After merge: {len(frame)} observations")
+
+    # Above/Below median trade by year
+    med = frame.groupby('Year')['Trade'].transform('median')
+    frame['group'] = (frame['Trade'] > med).map({True:'Above Median', False:'Below Median'})
+    
+    # Count countries in each group by year
+    group_counts = frame.groupby(['Year','group']).size().reset_index(name='count')
+    print(f"Group distribution:\n{group_counts.head(10)}")
+
+    # Average growth by group → pivot → difference
+    result = (frame.groupby(['Year','group'])['Growth'].mean()
+                    .reset_index())
+    pivot = result.pivot(index='Year', columns='group', values='Growth')
+    pivot = pivot.sort_index()
+    
+    # Calculate difference: Above Median - Below Median
+    if 'Above Median' in pivot.columns and 'Below Median' in pivot.columns:
+        pivot['difference'] = pivot['Above Median'] - pivot['Below Median']
+    else:
+        print("Warning: Both Above and Below Median groups not found")
+        return None
+        
+    print(f"Pivot table shape: {pivot.shape}")
+    print(f"Average difference: {pivot['difference'].mean():.3f} percentage points")
+
+    # Plot the difference series (the slide's chart)
+    plt.figure(figsize=(12, 8))
+    
+    # Main difference line
+    plt.plot(pivot.index, pivot['difference'], marker='o', linewidth=2, 
+             label='Growth Gap (Above - Below Median Trade)', color='blue')
+    
+    # Mean line
+    plt.axhline(pivot['difference'].mean(), linewidth=2, linestyle='--', 
+                color='red', alpha=0.7, label=f'Mean Gap ({pivot["difference"].mean():.2f} pp)')
+    
+    # Zero line
+    plt.axhline(0, linewidth=1, color='black', alpha=0.5, label='Zero Gap')
+    
+    # Customize plot
+    plt.title('Difference in GDP per Capita Growth by High vs Low Trade Countries', 
+              fontsize=14, fontweight='bold')
+    plt.xlabel('Year', fontsize=12)
+    plt.ylabel('GDP per Capita Growth (percentage points)', fontsize=12)
+    plt.legend(fontsize=10)
+    plt.grid(True, linestyle='--', alpha=0.3)
+    
+    # Format x-axis
+    plt.xticks(pivot.index[::5], rotation=45)
+    
+    plt.tight_layout()
+    plt.savefig('lab_growth_gap_difference.png', dpi=300, bbox_inches='tight')
+    print("Difference plot saved as 'lab_growth_gap_difference.png'")
+    
+    return pivot
+
 def print_summary():
     """Print summary paragraph explaining importance of the comparison"""
     summary = """
-    
+
 SUMMARY:
-This comparison between U.S. and Chinese trade openness (Trade % of GDP) is critically important 
+This comparison between U.S. and Chinese trade openness (Trade:% of GDP) is critically important 
 for understanding global economic dynamics. The United States, as the world's largest economy, 
 traditionally maintained relatively stable trade openness levels, reflecting its diversified domestic 
 economy and historical emphasis on consumption-driven growth. China's remarkable transformation 
@@ -199,6 +315,16 @@ def main():
         
         # Step 5: Print summary
         print_summary()
+        
+        print("\n" + "="*60)
+        print("TO RUN COMPLETE DATA LAB 2 ANALYSIS:")
+        print("="*60)
+        print("# If you have both Trade and Growth Excel files:")
+        print("# pivot_result = lab_median_growth_gap(")
+        print("#     'API_NE.TRD.GNFS_ZS.xlsx',  # Trade data")
+        print("#     'API_NY.GDP.PCAP.KD.ZG.xlsx'  # Growth data") 
+        print("# )")
+        print("# This will create 'lab_growth_gap_difference.png'")
         
         print("\nAnalysis completed successfully!")
         
