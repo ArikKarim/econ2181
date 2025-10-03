@@ -27,72 +27,73 @@ def transform_data(df):
     """Transform data to long format with proper filtering"""
     print("\nTransforming data to long format...")
     
-    # Check for the Trade as % of GDP indicator
-    # The indicator code is NE.TRD.GNFS.ZS for Trade (% of GDP)
-    trade_indicator = 'NE.TRD.GNFS.ZS'
+    # Remove empty rows and reset index
+    df_clean = df.dropna(subset=['Series Name']).reset_index(drop=True)
+    print(f"Cleaned data shape: {df_clean.shape}")
     
-    # Identify which columns contain this indicator
-    indicator_rows = df[df.iloc[:, 0] == trade_indicator]
+    # Filter for Trade (% of GDP) data
+    trade_rows = df_clean[df_clean['Series Name'] == 'Trade (% of GDP)']
+    print(f"Found {len(trade_rows)} rows with Trade (% of GDP) data")
     
-    if indicator_rows.empty:
-        print(f"Indicator {trade_indicator} not found. Available indicators:")
-        unique_indicators = df.iloc[:, 0].unique()[:10]  # Show first 10
-        print(unique_indicators)
-        return None
+    # Get USA and China data
+    usa_row = trade_rows[trade_rows['Country Name'] == 'United States']
+    chn_row = trade_rows[trade_rows['Country Name'] == 'China']
     
-    print(f"Found {len(indicator_rows)} rows for indicator {trade_indicator}")
-    
-    # Get the row for USA and CHN
-    usa_data = indicator_rows[indicator_rows.iloc[:, 1] == 'United States']
-    chn_data = indicator_rows[indicator_rows.iloc[:, 1] == 'China']
-    
-    if usa_data.empty:
-        print("USA data not found. Checking available countries...")
-        countries = indicator_rows.iloc[:, 1].unique()[:10]
-        print(countries)
+    if usa_row.empty:
+        print("USA data not found. Available countries:")
+        print(trade_rows['Country Name'].unique())
         return None
         
-    if chn_data.empty:
-        print("China data not found. Checking available countries...")
-        countries = indicator_rows.iloc[:, 1].unique()[:10]
-        print(countries)
+    if chn_row.empty:
+        print("China data not found. Available countries:")
+        print(trade_rows['Country Name'].unique())
         return None
     
-    # Get year columns (assuming they start from column 4 onwards)
-    # This might need adjustment based on actual Excel structure
-    year_columns = [col for col in df.columns if isinstance(col, (int, float)) and 1990 <= col <= 2024]
+    print("Found USA and China data")
     
-    if not year_columns:
-        # Try alternative approach - look for column names that are years
-        year_columns = [col for col in df.columns if str(col).isdigit() and 1990 <= int(str(col)) <= 2024]
+    # Get year columns (from 1990 to 2024)
+    year_columns = [col for col in df_clean.columns if isinstance(col, str) and col.startswith('19') or col.startswith('20')]
+    # Clean year column names to extract year numbers
+    year_numbers = []
+    cleaned_year_cols = []
     
-    if not year_columns:
-        print("Year columns not found. Available columns:")
-        print([col for col in df.columns])
-        return None
+    for col in year_columns:
+        # Extract year from column name like "1990 [YR1990]"
+        if '[YR' in col:
+            year_str = col.split('[YR')[1].split(']')[0]
+            try:
+                year_num = int(year_str)
+                if 1990 <= year_num <= 2024:
+                    year_numbers.append(year_num)
+                    cleaned_year_cols.append(col)
+            except ValueError:
+                continue
     
-    print(f"Year columns found: {year_columns}")
+    year_numbers.sort()
+    cleaned_year_cols.sort(key=lambda x: int(x.split('[YR')[1].split(']')[0]))
+    
+    print(f"Year columns found: {len(year_numbers)} years from {min(year_numbers)} to {max(year_numbers)}")
     
     # Extract data for USA and China
-    usa_values = usa_data[year_columns].values.flatten()
-    chn_values = chn_data[year_columns].values.flatten()
+    usa_values = usa_row[cleaned_year_cols].values.flatten()
+    chn_values = chn_row[cleaned_year_cols].values.flatten()
     
     # Create long format data
     data_long = []
     
-    for i, year in enumerate(year_columns):
-        if not pd.isna(usa_values[i]):
+    for i, year in enumerate(year_numbers):
+        if not pd.isna(usa_values[i]) and usa_values[i] != '':
             data_long.append({
                 'year': year,
                 'country': 'United States',
-                'trade_pct_gdp': usa_values[i]
+                'trade_pct_gdp': float(usa_values[i])
             })
         
-        if not pd.isna(chn_values[i]):
+        if not pd.isna(chn_values[i]) and chn_values[i] != '':
             data_long.append({
                 'year': year,
                 'country': 'China', 
-                'trade_pct_gdp': chn_values[i]
+                'trade_pct_gdp': float(chn_values[i])
             })
     
     df_long = pd.DataFrame(data_long)
@@ -105,6 +106,10 @@ def transform_data(df):
 def create_plot(df_long):
     """Create matplotlib line chart"""
     print("\nCreating visualization...")
+    
+    # Set non-interactive backend to avoid GUI issues
+    import matplotlib
+    matplotlib.use('Agg')
     
     # Set up the plot
     plt.figure(figsize=(12, 8))
@@ -134,7 +139,8 @@ def create_plot(df_long):
     plt.savefig('trade_comparison_usa_china.png', dpi=300, bbox_inches='tight')
     print("Plot saved as 'trade_comparison_usa_china.png'")
     
-    plt.show()
+    # Don't show plot in interactive mode since we're saving it
+    # plt.show()  # Commented out to prevent hanging in non-GUI environments
 
 def save_to_csv(df_long):
     """Save transformed dataset as CSV"""
