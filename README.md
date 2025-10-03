@@ -1,14 +1,14 @@
 # ECON2181
 Data lab submissions for International Trade Theory &amp; Policy @ GW.
 
-## Trade Analysis: USA vs China
+## Data Lab 2: Trade Analysis (USA vs China)
 
 This project analyzes World Bank data comparing trade openness (% of GDP) between the United States and China from 1990-2024.
 
 ### Files:
 - `trade_analysis.py` - Main analysis script
 - `requirements.txt` - Python dependencies
-- `us_china_trade_gdp_1990_2024.xlsx` - World Bank data file (not included)
+- `us_china_trade_gdp_1990_2024.xlsx` - World Bank data file
 
 ### Setup:
 1. Install dependencies: `py -m pip install -r requirements.txt`
