@@ -237,9 +237,12 @@ print(f"  Home: {L_H_M_new - L_H_M_baseline:.6f} workers")
 print(f"  Foreign: {L_F_M_new - L_F_M_baseline:.6f} workers")
 
 print("\nInterpretation:")
-print("This is consistent with class theory: When manufacturing productivity increases,")
-print("the marginal product of labor in manufacturing rises, making it more attractive.")
-print("Labor reallocates from agriculture to manufacturing in both countries.")
+print("NOTE: In this specific case, labor allocation does NOT change because")
+print("the equilibrium price adjustment exactly offsets the productivity increase.")
+print("Mathematically: p_new * Z_M_new = p_baseline * Z_M_baseline = 0.833808")
+print("Since Omega = (p*Z_M/Z_A)^(1/beta) * (K/T), and p*Z_M stays constant,")
+print("Omega stays constant, so labor allocation stays constant.")
+print("This is a special case - in general, labor would reallocate.")
 
 # =============================================================================
 # QUESTION 2c: Plot relative output and prices
@@ -287,15 +290,15 @@ for i, v in enumerate(rel_prices):
 
 plt.tight_layout()
 plt.savefig('comparative_statics.png', dpi=300, bbox_inches='tight')
-plt.show()
+plt.close()
 
-print("\n✓ Plot saved as 'comparative_statics.png'")
+print("\n[OK] Plot saved as 'comparative_statics.png'")
 
 print("\nEconomic Interpretation:")
-print("• SUPPLY EFFECT: Productivity increase shifts RS curve right → more M produced")
-print("• PRICE EFFECT: Increased supply of M lowers its relative price (P_M/P_A falls)")
-print("• DEMAND EFFECT: Lower P_M increases quantity demanded of M")
-print("• EQUILIBRIUM: Both relative output Y_M/Y_A and relative price P_M/P_A change")
+print("- SUPPLY EFFECT: Productivity increase shifts RS curve right -> more M produced")
+print("- PRICE EFFECT: Increased supply of M lowers its relative price (P_M/P_A falls)")
+print("- DEMAND EFFECT: Lower P_M increases quantity demanded of M")
+print("- EQUILIBRIUM: Both relative output Y_M/Y_A and relative price P_M/P_A change")
 
 # =============================================================================
 # QUESTION 2d: Real wages and consumer welfare
@@ -331,6 +334,8 @@ print(f"  Foreign - Baseline: {real_wage_M_F_baseline:.6f}, New: {real_wage_M_F_
 
 # Visualize real wage changes
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+# Set a non-interactive backend to avoid display issues
+plt.ioff()
 
 countries = ['Home', 'Foreign']
 baseline_wA = [real_wage_A_H_baseline, real_wage_A_F_baseline]
@@ -380,18 +385,21 @@ axes[1, 1].grid(axis='y', alpha=0.3)
 for i, v in enumerate(pct_change_M):
     axes[1, 1].text(i, v + 0.5 if v > 0 else v - 0.5, f'{v:.2f}%', ha='center', fontsize=10)
 
-plt.tight_layout()
-plt.savefig('real_wages_analysis.png', dpi=300, bbox_inches='tight')
-plt.show()
+try:
+    plt.tight_layout()
+except:
+    pass
+plt.savefig('real_wages_analysis.png', dpi=300)
+plt.close()
 
-print("\n✓ Plot saved as 'real_wages_analysis.png'")
+print("\n[OK] Plot saved as 'real_wages_analysis.png'")
 
 print("\nWelfare Analysis:")
-print("• Real wage in terms of AGRICULTURE (w/P_A): INCREASED in both countries")
-print("• Real wage in terms of MANUFACTURING (w/P_M): INCREASED even more!")
-print("• Consumers are BETTER OFF: They can afford more of both goods")
-print("• Why? Productivity gains in M lower P_M, benefiting all consumers")
-print("• Workers' purchasing power rises for both goods → welfare improvement")
+print("- Real wage in terms of AGRICULTURE (w/P_A): INCREASED in both countries")
+print("- Real wage in terms of MANUFACTURING (w/P_M): INCREASED even more!")
+print("- Consumers are BETTER OFF: They can afford more of both goods")
+print("- Why? Productivity gains in M lower P_M, benefiting all consumers")
+print("- Workers' purchasing power rises for both goods -> welfare improvement")
 
 print("\n" + "=" * 70)
 print("ANALYSIS COMPLETE")
