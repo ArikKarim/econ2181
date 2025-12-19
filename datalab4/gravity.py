@@ -4,13 +4,19 @@ import numpy as np
 from linearmodels.panel import PanelOLS
 import statsmodels.formula.api as smf
 
-data = r'C:\Users\15613\Downloads\Countries_V202102.dta'
+data = r'C:\Users\15613\Downloads\Gravity_V202102.dta'
 
 # === Load data ===
 df = pd.read_stata(data)
+print(f"Data loaded. Shape: {df.shape}")
+print(f"Columns: {df.columns.tolist()[:10]}")
 
 # === Keep only pairs between existing countries ===
-df = df[(df["country_exists_o"] == 1) & (df["country_exists_d"] == 1)].copy()
+if "country_exists_o" in df.columns and "country_exists_d" in df.columns:
+    df = df[(df["country_exists_o"] == 1) & (df["country_exists_d"] == 1)].copy()
+    print(f"After filtering existing countries. Shape: {df.shape}")
+else:
+    print("Warning: country_exists columns not found, skipping filter")
 
 # dependent variable
 df["lntrade"] = np.log(df["tradeflow_comtrade_d"])
@@ -41,7 +47,7 @@ plt.ylabel("ln(trade)")
 plt.title("Trade flows vs. distance")
 plt.tight_layout()
 plt.savefig(r'C:\Users\15613\Downloads\gravity.png')
-plt.show()
+plt.close()  # Close the figure instead of showing it
 
 # absorb fixed effects from all variables
 # === Construct the variables ===
