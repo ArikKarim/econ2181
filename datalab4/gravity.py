@@ -35,9 +35,20 @@ df["colony"] = df["col_dep_ever"]     # Common colonial metropolis (binary)
 df["border"] = df["contig"]           # Shared border/contiguity (binary)
 
 # run simple regression
-
 gravity_simple = smf.ols("lntrade ~ lndist", data=df).fit()
+print("="*80)
+print("SIMPLE REGRESSION: lntrade ~ lndist")
+print("="*80)
 print(gravity_simple.summary())
+
+# run OLS regression: ln Xod,t = α + β1×ln distod + β2×languageod + β3×religionod + β4×colonialod + β5×borderod + ẽod,t
+# Drop NAs for this regression
+df_ols = df.dropna(subset=["lntrade", "lndist", "lang", "relig", "colony", "border"]).copy()
+print("\n" + "="*80)
+print("OLS REGRESSION: lntrade ~ lndist + lang + relig + colony + border")
+print("="*80)
+gravity_ols = smf.ols("lntrade ~ lndist + lang + relig + colony + border", data=df_ols).fit()
+print(gravity_ols.summary())
 
 # plot figure
 
