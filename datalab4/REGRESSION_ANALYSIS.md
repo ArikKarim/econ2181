@@ -13,6 +13,14 @@ This analysis implements a gravity model of international trade, examining how b
   1. Simple OLS regression of log trade on log distance
   2. Fixed effects regression with country-pair fixed effects (absorbing exporter and importer fixed effects)
 
+### Variable Definitions
+
+All binary variables are true/false indicators:
+- **`comlang_off`**: Do origin (o) and destination (d) share a common official language?
+- **`comrelig`**: Do o and d share a common religion?
+- **`col_dep_ever`**: Do o and d share a common colonial metropolis (were colonized by the same colonial power)?
+- **`contig`**: Do o and d share a border (are contiguous)?
+
 ## Regression Results
 
 ### 1. Simple Gravity Regression (Without Fixed Effects)
@@ -65,6 +73,7 @@ After absorbing exporter and importer fixed effects, the regression results are:
 ### 2. **Common Language (lang_r): +0.6558** ✓ Makes Economic Sense
 
 - **Interpretation**: Countries sharing an official language trade approximately **92.6% more** (exp(0.6558) - 1 ≈ 0.926) than countries without a common language.
+- **Variable Definition**: `comlang_off` is a binary indicator (true/false) for whether origin and destination countries share a common official language.
 - **Economic Rationale**:
   - Common language reduces communication costs and transaction costs
   - Facilitates contract enforcement and business relationships
@@ -82,26 +91,29 @@ After absorbing exporter and importer fixed effects, the regression results are:
 
 ### 4. **Common Religion (relig_r): +0.3996** ✓ Makes Economic Sense
 
-- **Interpretation**: Countries sharing a dominant religion trade approximately **49.1% more** (exp(0.3996) - 1 ≈ 0.491).
+- **Interpretation**: Countries sharing a common religion trade approximately **49.1% more** (exp(0.3996) - 1 ≈ 0.491).
+- **Variable Definition**: `comrelig` is a binary indicator (true/false) for whether origin and destination countries share a common religion.
 - **Economic Rationale**:
   - Shared cultural values reduce transaction costs
   - Religious networks can facilitate business relationships
   - Cultural similarity reduces information costs
 - **Note**: This effect is substantial but smaller than language, suggesting language is a more direct trade facilitator
 
-### 5. **Colonial Relationship (colony_r): +1.0056** ✓ Makes Economic Sense
+### 5. **Common Colonial Metropolis (colony_r): +1.0056** ✓ Makes Economic Sense
 
-- **Interpretation**: Countries with a historical colonial relationship trade approximately **173.5% more** (exp(1.0056) - 1 ≈ 1.735), or nearly **2.7 times** as much.
+- **Interpretation**: Countries that share a common colonial metropolis (were colonized by the same colonial power) trade approximately **173.5% more** (exp(1.0056) - 1 ≈ 1.735), or nearly **2.7 times** as much.
+- **Variable Definition**: `col_dep_ever` indicates whether origin and destination countries share a common colonial metropolis (true/false binary indicator).
 - **Economic Rationale**:
-  - Colonial relationships established trade networks and infrastructure
-  - Shared institutions and legal frameworks from colonial era
-  - Established business relationships and cultural ties
-  - This is the **largest effect** among all variables, highlighting the persistence of historical trade relationships
-- **Policy Implication**: Historical relationships have long-lasting effects on trade patterns
+  - Countries colonized by the same power share institutions, legal frameworks, and administrative structures
+  - Established trade networks and infrastructure from the colonial era
+  - Shared language, currency, or trade preferences from colonial relationships
+  - This is the **largest effect** among all variables, highlighting the persistence of historical institutional and trade relationships
+- **Policy Implication**: Historical colonial relationships create persistent trade advantages through shared institutions and networks
 
 ### 6. **Shared Border (border_r): +0.4632** ✓ Makes Economic Sense
 
-- **Interpretation**: Contiguous countries trade approximately **58.9% more** (exp(0.4632) - 1 ≈ 0.589).
+- **Interpretation**: Contiguous countries (sharing a border) trade approximately **58.9% more** (exp(0.4632) - 1 ≈ 0.589).
+- **Variable Definition**: `contig` is a binary indicator (true/false) for whether origin and destination countries share a border.
 - **Economic Rationale**:
   - Lower transportation costs for land-based trade
   - Easier cross-border movement of goods and people

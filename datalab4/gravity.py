@@ -22,12 +22,17 @@ else:
 df["lntrade"] = np.log(df["tradeflow_comtrade_d"])
 
 # independent variables
+# Variable definitions:
+# - comlang_off: do origin (o) and destination (d) share common language? (true/false)
+# - comrelig: do o, d share common religion? (true/false)
+# - col_dep_ever: do o, d share common colonial metropolis? (true/false)
+# - contig: do o, d share a border? (true/false)
 df["lndist"] = np.log(df["distw"])
-df["lang"]   = df["comlang_off"]
-df["leg"]    = df["transition_legalchange"]
-df["relig"]  = df["comrelig"]
-df["colony"] = df["col_dep_ever"]
-df["border"] = df["contig"]
+df["lang"]   = df["comlang_off"]      # Common official language (binary)
+df["leg"]    = df["transition_legalchange"]  # Legal system transition similarity
+df["relig"]  = df["comrelig"]         # Common religion (binary)
+df["colony"] = df["col_dep_ever"]     # Common colonial metropolis (binary)
+df["border"] = df["contig"]           # Shared border/contiguity (binary)
 
 # run simple regression
 
